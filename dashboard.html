@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhishGuard Dashboard</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; background: #0f1117; color: #e2e8f0; min-height: 100vh; }
+    .topbar { background: #1a1d27; border-bottom: 1px solid #2d3148; padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600; color: #fff; }
+    .brand-dot { width: 12px; height: 12px; border-radius: 50%; background: #ef4444; }
+    .status { font-size: 12px; background: #14532d; color: #4ade80; padding: 4px 12px; border-radius: 20px; }
+    .main { padding: 24px; max-width: 1100px; margin: 0 auto; }
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: #1a1d27; border: 1px solid #2d3148; border-radius: 12px; padding: 20px; }
+    .stat-label { font-size: 12px; color: #94a3b8; margin-bottom: 8px; text-transform: uppercase; letter-spacing: .05em; }
+    .stat-value { font-size: 28px; font-weight: 600; color: #fff; }
+    .stat-sub { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .stat-value.danger { color: #ef4444; }
+    .stat-value.warn { color: #f59e0b; }
+    .stat-value.safe { color: #4ade80; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+    .panel { background: #1a1d27; border: 1px solid #2d3148; border-radius: 12px; padding: 20px; }
+    .panel-title { font-size: 14px; font-weight: 500; color: #e2e8f0; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .bar-label { font-size: 12px; color: #94a3b8; width: 160px; flex-shrink: 0; }
+    .bar-track { flex: 1; height: 8px; background: #2d3148; border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; transition: width .6s ease; }
+    .bar-count { font-size: 12px; color: #64748b; width: 30px; text-align: right; }
+    .scan-form { display: flex; flex-direction: column; gap: 10px; }
+    .scan-input { background: #0f1117; border: 1px solid #2d3148; border-radius: 8px; padding: 10px 14px; color: #e2e8f0; font-size: 13px; font-family: Arial; resize: vertical; }
+    .scan-input:focus { outline: none; border-color: #3b82f6; }
+    .scan-btn { background: #1d4ed8; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background .15s; }
+    .scan-btn:hover { background: #2563eb; }
+    .scan-btn:disabled { opacity: .5; cursor: default; }
+    .result-box { background: #0f1117; border: 1px solid #2d3148; border-radius: 8px; padding: 14px; font-size: 13px; line-height: 1.7; display: none; }
+    .result-box.show { display: block; }
+    .result-box.danger { border-color: #ef4444; background: #1c0a0a; }
+    .result-box.warn { border-color: #f59e0b; background: #1c150a; }
+    .result-box.safe { border-color: #4ade80; background: #0a1c0e; }
+    .feed-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #2d3148; }
+    .feed-item:last-child { border-bottom: none; }
+    .feed-badge { font-size: 10px; font-weight: 600; padding: 3px 8px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+    .feed-badge.danger { background: #450a0a; color: #ef4444; }
+    .feed-badge.warn { background: #451a03; color: #f59e0b; }
+    .feed-badge.safe { background: #052e16; color: #4ade80; }
+    .feed-info { flex: 1; min-width: 0; }
+    .feed-sender { font-size: 13px; color: #e2e8f0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .feed-exp { font-size: 12px; color: #64748b; margin-top: 2px; line-height: 1.5; }
+    .feed-score { font-size: 12px; color: #64748b; flex-shrink: 0; }
+    .empty { text-align: center; color: #64748b; font-size: 13px; padding: 20px 0; }
+  </style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="brand-dot"></span> PhishGuard AI</div>
+  <span class="status">● Live</span>
+</div>
+
+<div class="main">
+
+  <div class="stats-grid" id="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total scanned</div>
+      <div class="stat-value" id="total">0</div>
+      <div class="stat-sub">all time</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Dangerous</div>
+      <div class="stat-value danger" id="dangerous">0</div>
+      <div class="stat-sub">high threat</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Suspicious</div>
+      <div class="stat-value warn" id="suspicious">0</div>
+      <div class="stat-sub">medium threat</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Clean</div>
+      <div class="stat-value safe" id="clean">0</div>
+      <div class="stat-sub">safe emails</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <div class="panel-title">🔍 Scan an email</div>
+      <div class="scan-form">
+        <input class="scan-input" id="in-sender" placeholder="Sender email address" />
+        <input class="scan-input" id="in-subject" placeholder="Email subject" />
+        <textarea class="scan-input" id="in-body" placeholder="Email body (optional)" rows="3"></textarea>
+        <button class="scan-btn" id="scan-btn" onclick="scanEmail()">Scan with PhishGuard</button>
+        <div class="result-box" id="result-box"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">📊 Top attack types</div>
+      <div id="attack-bars">
+        <div class="empty">No scans yet — run a scan to see patterns</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">📋 Recent scans</div>
+    <div id="feed"><div class="empty">No scans yet</div></div>
+  </div>
+
+</div>
+
+<script>
+  let stats = { total: 0, dangerous: 0, suspicious: 0, clean: 0 };
+  let scans = [];
+  let attackCounts = {};
+
+  async function scanEmail() {
+    const sender = document.getElementById('in-sender').value.trim();
+    const subject = document.getElementById('in-subject').value.trim();
+    const body = document.getElementById('in-body').value.trim();
+
+    if (!sender || !subject) {
+      alert('Please enter at least a sender and subject.');
+      return;
+    }
+
+    const btn = document.getElementById('scan-btn');
+    btn.disabled = true;
+    btn.textContent = 'Scanning...';
+
+    try {
+      const res = await fetch('http://127.0.0.1:8000/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sender, subject, body })
+      });
+      const result = await res.json();
+
+      updateStats(result);
+      updateFeed(sender, subject, result);
+      updateAttacks(result.reasons);
+      showResult(result);
+
+    } catch (err) {
+      alert('Cannot connect to PhishGuard server. Make sure uvicorn is running.');
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Scan with PhishGuard';
+  }
+
+  function updateStats(result) {
+    stats.total++;
+    if (result.label === 'DANGEROUS') stats.dangerous++;
+    else if (result.label === 'SUSPICIOUS') stats.suspicious++;
+    else stats.clean++;
+
+    document.getElementById('total').textContent = stats.total;
+    document.getElementById('dangerous').textContent = stats.dangerous;
+    document.getElementById('suspicious').textContent = stats.suspicious;
+    document.getElementById('clean').textContent = stats.clean;
+  }
+
+  function showResult(result) {
+    const box = document.getElementById('result-box');
+    const cls = result.label === 'DANGEROUS' ? 'danger' : result.label === 'SUSPICIOUS' ? 'warn' : 'safe';
+    box.className = `result-box show ${cls}`;
+    box.innerHTML = `
+      <strong style="font-size:15px">${result.label} — Score: ${result.score}/100</strong>
+      ${result.ml_confidence ? ` <span style="color:#64748b;font-size:12px">ML: ${result.ml_confidence}</span>` : ''}
+      <br><br>${result.explanation}<br><br>
+      <span style="color:#64748b;font-size:12px">${result.reasons.join(' · ') || 'No threats detected'}</span>
+    `;
+  }
+
+  function updateFeed(sender, subject, result) {
+    scans.unshift({ sender, subject, result, time: new Date().toLocaleTimeString() });
+    if (scans.length > 20) scans.pop();
+
+    const cls = result.label === 'DANGEROUS' ? 'danger' : result.label === 'SUSPICIOUS' ? 'warn' : 'safe';
+    const feed = document.getElementById('feed');
+    if (feed.querySelector('.empty')) feed.innerHTML = '';
+
+    feed.insertAdjacentHTML('afterbegin', `
+      <div class="feed-item">
+        <span class="feed-badge ${cls}">${result.label}</span>
+        <div class="feed-info">
+          <div class="feed-sender">${sender}</div>
+          <div class="feed-exp">${result.explanation.slice(0, 100)}...</div>
+        </div>
+        <div class="feed-score">${result.score}</div>
+      </div>
+    `);
+  }
+
+  function updateAttacks(reasons) {
+    reasons.forEach(r => {
+      attackCounts[r] = (attackCounts[r] || 0) + 1;
+    });
+
+    const sorted = Object.entries(attackCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+    const max = sorted[0]?.[1] || 1;
+    const colors = ['#ef4444', '#f59e0b', '#3b82f6', '#8b5cf6', '#06b6d4'];
+
+    const bars = document.getElementById('attack-bars');
+    bars.innerHTML = sorted.map(([label, count], i) => `
+      <div class="bar-row">
+        <div class="bar-label">${label.slice(0, 28)}</div>
+        <div class="bar-track">
+          <div class="bar-fill" style="width:${Math.round((count/max)*100)}%;background:${colors[i]}"></div>
+        </div>
+        <div class="bar-count">${count}</div>
+      </div>
+    `).join('');
+
+    if (!sorted.length) bars.innerHTML = '<div class="empty">No patterns yet</div>';
+  }
+</script>
+</body>
+</html>
