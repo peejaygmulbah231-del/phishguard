@@ -131,7 +131,7 @@
     btn.textContent = 'Scanning...';
 
     try {
-      const res = await fetch('https://phishguard-rdrv.onrender.com/analyze', {
+      const res = await fetch('/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sender, subject, body })

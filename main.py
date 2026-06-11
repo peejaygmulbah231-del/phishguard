@@ -2,6 +2,7 @@ import os
 import pickle
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from groq import Groq
 from dotenv import load_dotenv
@@ -35,6 +36,10 @@ class EmailRequest(BaseModel):
 @app.get("/")
 def home():
     return {"status": "PhishGuard API is running", "version": "2.0 with ML"}
+
+@app.get("/dashboard")
+def dashboard():
+    return FileResponse("dashboard.html")
 
 @app.post("/analyze")
 def analyze_email(email: EmailRequest):
